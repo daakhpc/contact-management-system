@@ -40,7 +40,8 @@ const BulkUpload: React.FC<BulkUploadProps> = ({ onUpload, setAppError }) => {
                     return {
                         id: `bulk-${Date.now()}-${Math.random()}`,
                         name: name.trim(),
-                        mobile: mobile.trim()
+                        mobile: mobile.trim(),
+                        logs: []
                     };
                 });
 

@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Contact, ContactManagerData, SavedList } from './types';
+import { Contact, ContactManagerData, SavedList, InteractionLog } from './types';
 import Header from './components/Header';
 import ContactList from './components/ContactList';
 import ContactFormModal from './components/ContactFormModal';
 import BulkUpload from './components/BulkUpload';
 import ManageListsModal from './components/ManageListsModal';
+import LogInteractionModal from './components/LogInteractionModal';
+import InteractionHistoryModal from './components/InteractionHistoryModal';
 import { DatabaseIcon } from './components/Icons';
 
 const App: React.FC = () => {
@@ -13,6 +15,8 @@ const App: React.FC = () => {
     const [editingContact, setEditingContact] = useState<Contact | null>(null);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
     const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+    const [logModalState, setLogModalState] = useState<{isOpen: boolean; contact: Contact | null; type: InteractionLog['type'] | null}>({isOpen: false, contact: null, type: null});
+    const [historyModalState, setHistoryModalState] = useState<{isOpen: boolean, contact: Contact | null}>({isOpen: false, contact: null});
     const [error, setError] = useState<string | null>(null);
     const [notification, setNotification] = useState<string | null>(null);
 
@@ -75,7 +79,7 @@ const App: React.FC = () => {
     }, [notification, error]);
 
 
-    // --- Contact Modal Handlers ---
+    // --- Modal Handlers ---
     const handleOpenContactModal = useCallback((contact: Contact | null = null) => {
         setEditingContact(contact);
         setIsContactModalOpen(true);
@@ -85,8 +89,23 @@ const App: React.FC = () => {
         setIsContactModalOpen(false);
         setEditingContact(null);
     }, []);
-    
 
+    const handleOpenLogModal = useCallback((contact: Contact, type: InteractionLog['type']) => {
+        setLogModalState({ isOpen: true, contact, type });
+    }, []);
+    
+    const handleCloseLogModal = useCallback(() => {
+        setLogModalState({ isOpen: false, contact: null, type: null });
+    }, []);
+    
+    const handleOpenHistoryModal = useCallback((contact: Contact) => {
+        setHistoryModalState({ isOpen: true, contact });
+    }, []);
+
+    const handleCloseHistoryModal = useCallback(() => {
+        setHistoryModalState({ isOpen: false, contact: null });
+    }, []);
+    
     // --- Core Data Handlers ---
     const updateActiveList = (updater: (list: SavedList) => SavedList) => {
         setData(prevData => {
@@ -100,7 +119,7 @@ const App: React.FC = () => {
         });
     };
 
-    const handleSaveContact = useCallback((contactData: Omit<Contact, 'id'> & { id?: string }) => {
+    const handleSaveContact = useCallback((contactData: Omit<Contact, 'id' | 'logs'> & { id?: string }) => {
         let action = 'added';
         updateActiveList(list => {
             let newContacts: Contact[];
@@ -108,7 +127,7 @@ const App: React.FC = () => {
                 action = 'updated';
                 newContacts = list.contacts.map(c => c.id === contactData.id ? { ...c, name: contactData.name, mobile: contactData.mobile } : c)
             } else { // Adding
-                const newContact: Contact = { id: `contact-${Date.now()}`, name: contactData.name, mobile: contactData.mobile };
+                const newContact: Contact = { id: `contact-${Date.now()}`, name: contactData.name, mobile: contactData.mobile, logs: [] };
                 newContacts = [newContact, ...list.contacts];
             }
             return { ...list, contacts: newContacts, updatedAt: new Date().toISOString() };
@@ -116,6 +135,29 @@ const App: React.FC = () => {
         setNotification(`Contact "${contactData.name}" ${action} successfully.`);
         handleCloseContactModal();
     }, [handleCloseContactModal]);
+
+    const handleSaveLog = useCallback((logData: Omit<InteractionLog, 'id' | 'timestamp'>) => {
+        if (!logModalState.contact) return;
+        
+        const newLog: InteractionLog = {
+            ...logData,
+            id: `log-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+        };
+
+        updateActiveList(list => {
+            const updatedContacts = list.contacts.map(c => {
+                if (c.id === logModalState.contact?.id) {
+                    return { ...c, logs: [newLog, ...(c.logs || [])] };
+                }
+                return c;
+            });
+            return { ...list, contacts: updatedContacts, updatedAt: new Date().toISOString() };
+        });
+
+        setNotification(`Interaction for "${logModalState.contact.name}" logged.`);
+        handleCloseLogModal();
+    }, [logModalState.contact, handleCloseLogModal]);
 
     const handleDeleteContact = useCallback((id: string) => {
         if (window.confirm('Are you sure you want to delete this contact?')) {
@@ -248,7 +290,9 @@ const App: React.FC = () => {
                             <ContactList 
                                 contacts={contacts} 
                                 onEdit={handleOpenContactModal} 
-                                onDelete={handleDeleteContact} 
+                                onDelete={handleDeleteContact}
+                                onLogInteraction={handleOpenLogModal}
+                                onViewHistory={handleOpenHistoryModal}
                             />
                         </>
                     ) : (
@@ -277,6 +321,15 @@ const App: React.FC = () => {
                 onLoadList={handleLoadList}
                 onDeleteList={handleDeleteList}
                 onRenameList={handleRenameList}
+            />
+            <LogInteractionModal
+                state={logModalState}
+                onClose={handleCloseLogModal}
+                onSave={handleSaveLog}
+            />
+            <InteractionHistoryModal
+                state={historyModalState}
+                onClose={handleCloseHistoryModal}
             />
         </div>
     );

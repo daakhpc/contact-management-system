@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Contact } from '../types';
+import { Contact, InteractionLog } from '../types';
 import ContactItem from './ContactItem';
 import { UserIcon } from './Icons';
 
@@ -8,9 +8,11 @@ interface ContactListProps {
     contacts: Contact[];
     onEdit: (contact: Contact) => void;
     onDelete: (id: string) => void;
+    onLogInteraction: (contact: Contact, type: InteractionLog['type']) => void;
+    onViewHistory: (contact: Contact) => void;
 }
 
-const ContactList: React.FC<ContactListProps> = ({ contacts, onEdit, onDelete }) => {
+const ContactList: React.FC<ContactListProps> = ({ contacts, onEdit, onDelete, onLogInteraction, onViewHistory }) => {
     if (contacts.length === 0) {
         return (
             <div className="text-center py-16 px-6 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
@@ -29,6 +31,8 @@ const ContactList: React.FC<ContactListProps> = ({ contacts, onEdit, onDelete })
                     contact={contact}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onLogInteraction={onLogInteraction}
+                    onViewHistory={onViewHistory}
                 />
             ))}
         </div>

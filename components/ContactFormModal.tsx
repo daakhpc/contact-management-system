@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Contact } from '../types';
 import { CloseIcon, UserIcon, PhoneIcon } from './Icons';
@@ -6,7 +5,7 @@ import { CloseIcon, UserIcon, PhoneIcon } from './Icons';
 interface ContactFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (contact: Omit<Contact, 'id'> & { id?: string }) => void;
+    onSave: (contact: Omit<Contact, 'id' | 'logs'> & { id?: string }) => void;
     contactToEdit: Contact | null;
 }
 
