@@ -1,0 +1,5 @@
+{
+  "name": "Contact Manager Pro",
+  "description": "A simple and elegant application to manage your contact lists. You can add, edit, delete, and bulk upload contacts from a CSV file.",
+  "requestFramePermissions": []
+}
